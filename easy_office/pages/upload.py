@@ -226,7 +226,6 @@ def upload_zone() -> rx.Component:
         max_size=5000000,  # 百度api最大文件限制 8mb
         border=f"1px dotted",
         class_name="rounded-md",
-        margin_top="10px",
         width="90vw",
         height="150px",
         padding="0px",

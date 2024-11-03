@@ -58,7 +58,12 @@ def index() -> rx.Component:
                         type="password",
                         required=True,
                     ),
-                    rx.button("确定", type="submit"),
+                    rx.button(
+                        "确定",
+                        type="submit",
+                        color=rx.color("slate", 2),
+                        bg=rx.color("slate", 12),
+                    ),
                     spacing="1",
                     height="100vh",
                     width="100vw",

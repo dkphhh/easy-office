@@ -2,7 +2,6 @@ import os
 from typing import Literal
 
 import httpx
-from aiolimiter import AsyncLimiter
 from dotenv import load_dotenv
 import reflex as rx
 import base64
@@ -20,10 +19,6 @@ load_dotenv()
 API_KEY = os.getenv("APIKEY")
 SECRET_KEY = os.getenv("SECRETKEY")
 BACK_END = os.getenv("BACK_END")
-
-rate_limit = AsyncLimiter(
-    3, 1
-)  # 腾讯云api限制，最高 QPS 为 5，所以创建一个 limiter ，限制每秒最多并发3个请求
 
 
 DATE_TO_REMOVE = "-/\\.:：年月日时秒分 "

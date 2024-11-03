@@ -2,7 +2,7 @@ import reflex as rx
 from reflex_ag_grid import ag_grid
 from ..models import JournalAccount
 from .upload import bank_slip_column_defs
-from sqlmodel import select
+from .components import nav_bar
 
 """
 TODO:
@@ -54,7 +54,8 @@ class DisplayState(rx.State):
                 session.commit()
 
         yield rx.toast(
-            f"数据更新, 行: {row}, 列: {col_field}, 更新值: {new_value}"
+            f"数据更新, 行: {row}, 列: {col_field}, 更新值: {new_value}",
+            duration=2000,
         )  # 向用户发出提示
 
 
@@ -72,8 +73,14 @@ def ag_grid_zone() -> rx.Component:
     )
 
 
-@rx.page(
-    route="/display", title="财务数据展示-EasyFinance", on_load=DisplayState.load_data
-)
+@rx.page(route="/display", title="账目一览-EasyFinance", on_load=DisplayState.load_data)
 def display() -> rx.Component:
-    return rx.flex(ag_grid_zone(), justify="center", padding_top="2rem")
+    return rx.flex(
+        nav_bar(),
+        ag_grid_zone(),
+        justify="center",
+        padding_top="2rem",
+        direction="column",
+        align="center",
+        padding="0",
+    )

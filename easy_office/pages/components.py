@@ -76,5 +76,5 @@ def nav_bar() -> rx.Component:
             height="48px",
         ),
         bg=rx.color("slate", 2),
-        class_name="flex flex-row justify-center items-center w-8/12 h-16 mt-2 rounded-full",
+        class_name="flex flex-row justify-center items-center w-8/12 h-16 m-2 rounded-full",
     )
