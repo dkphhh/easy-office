@@ -4,6 +4,7 @@ from ..utils.request_api import request_api
 from reflex_ag_grid import ag_grid
 from ..models import JournalAccount
 from datetime import datetime, timedelta
+import asyncio
 
 
 class UploadState(rx.State):
@@ -39,7 +40,8 @@ class UploadState(rx.State):
                 # print(len(files))
                 # print([file.filename for file in files])
                 # await asyncio.sleep(2)
-                resp_list = [await request_api(file=f, mode="bank_slip") for f in files]
+                tasks = [request_api(file=file, mode="bank_slip") for file in files]
+                resp_list = await asyncio.gather(*tasks)
                 self.upload_data.extend(resp_list)
             except ValueError as e:
                 yield rx.toast.error(f"系统报错：{e}")

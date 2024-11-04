@@ -1,8 +1,12 @@
 import reflex as rx
 from reflex_ag_grid import ag_grid
+import os
 from ..models import JournalAccount
 from .upload import bank_slip_column_defs
-from .components import nav_bar
+from .components.nav_bar import nav_bar
+from .components.check_password import check_password
+from ..utils.request_api import generate_filename, recognize_filetype
+import asyncio
 
 """
 TODO:
@@ -11,6 +15,7 @@ TODO:
 
 
 """
+BACK_END = os.getenv("BACK_END")
 
 
 class DisplayState(rx.State):
@@ -19,6 +24,7 @@ class DisplayState(rx.State):
     """
 
     display_data: list[dict] = []  # 展示的数据
+    up_loading: bool = False  # 是否有发票文件在上传
 
     @rx.var
     def data(self) -> list[dict]:
@@ -58,6 +64,75 @@ class DisplayState(rx.State):
             duration=2000,
         )  # 向用户发出提示
 
+    async def upload_invoice(self, files: list[rx.UploadFile]):
+        """上传发票文件，将发票文件的链接写入用户的剪贴板
+
+        Args:
+            files:  reflex 要求上传文件是list，但是上传组件其实只会上传一个文件
+
+        """
+
+        self.up_loading = True
+
+        yield
+
+        await asyncio.sleep(2)
+
+        file = files[0]
+        _, file_extension = recognize_filetype(file)  # 检查文件类型 和 文件扩展名
+        new_filename = generate_filename(
+            file_extension, length=6
+        )  # 用时间和随机字符串给文件重新命名
+        upload_file = rx.get_upload_dir() / new_filename  # 创建一个保存上传文件的地址
+        # 默认保存文件的目录时 upload_files
+
+        upload_data = await file.read()
+
+        with upload_file.open("wb") as file_object:
+            file_object.write(upload_data)  # 把文件保存到指定目录
+
+        file_url = f"{BACK_END}/_upload/{new_filename}"
+
+        yield rx.set_clipboard(file_url)
+
+        self.up_loading = False
+
+        yield
+
+        yield rx.toast(
+            f"发票文件的链接：{new_filename} 已经拷贝到你的剪贴板，你可以粘贴到对应条目中。",
+            close_button=True,
+        )
+
+
+def upload_invoice_button() -> rx.Component:
+    return rx.upload(
+        rx.cond(
+            DisplayState.up_loading,
+            rx.flex(
+                rx.spinner(size="3", color=rx.color("slate", 2)),
+                class_name="w-7 h-7 justify-center items-center",
+            ),
+            rx.icon("file-up", size=28, color=rx.color("slate", 2)),
+        ),
+        id="upload_invoice",
+        multiple=False,
+        accept={
+            "application/pdf": [".pdf"],
+            "image/png": [".png"],
+            "image/bmp": [".bmp"],
+            "image/jpeg": [".jpg", ".jpeg"],
+        },
+        max_size=5000000,  # 百度api最大文件限制 8mb
+        no_drag=True,
+        disabled=rx.cond(DisplayState.up_loading, True, False),
+        on_drop=DisplayState.upload_invoice(
+            rx.upload_files(upload_id="upload_invoice")
+        ),  # type:ignore
+        bg=rx.color("slate", 12),
+        class_name="fixed right-20 bottom-20 rounded-full !p-4 !border-0",
+    )
+
 
 def ag_grid_zone() -> rx.Component:
     return ag_grid(
@@ -72,13 +147,17 @@ def ag_grid_zone() -> rx.Component:
 
 
 @rx.page(route="/display", title="账目一览-EasyFinance", on_load=DisplayState.load_data)
+@check_password
 def display() -> rx.Component:
-    return rx.flex(
-        nav_bar(),
-        ag_grid_zone(),
-        justify="center",
-        padding_top="2rem",
-        direction="column",
-        align="center",
-        padding="0",
+    return rx.fragment(
+        rx.flex(
+            nav_bar(),
+            ag_grid_zone(),
+            justify="center",
+            padding_top="2rem",
+            direction="column",
+            align="center",
+            padding="0",
+        ),
+        upload_invoice_button(),
     )

@@ -12,9 +12,6 @@ import string
 import random
 from datetime import date, datetime
 
-load_dotenv()
-
-
 # 从环境变量中获取密钥参数
 API_KEY = os.getenv("APIKEY")
 SECRET_KEY = os.getenv("SECRETKEY")
@@ -27,10 +24,10 @@ AMOUNT_PATTERN = re.compile(r"[^\d.]")
 
 def recognize_filetype(file: rx.UploadFile) -> tuple[str, str]:
     """
-    检查用户上传的文件是图片还是pdf
+    检查用户上传的文件是图片还是pdf,并返回文件类型和扩展名
     Args:
         file:用户上传的文件
-    Returns: 是图片就返回img，是pdf，就返回pdf，都不是就报错
+    Returns: 返回一个元组 (文件类型,扩展名)
 
     """
     filename = file.filename.lower()
@@ -48,13 +45,18 @@ def recognize_filetype(file: rx.UploadFile) -> tuple[str, str]:
         raise TypeError("未知文件类型")
 
 
-def generate_random_string(length=6) -> str:
+def generate_filename(file_extension: str, length=6) -> str:
     """生成随机6位字符串
     Args:
+        file_extension：文件扩展名
         length: 字符串长度
     """
     characters = string.ascii_letters + string.digits
-    return "".join(random.choice(characters) for _ in range(length))
+    random_string = "".join(random.choice(characters) for _ in range(length))
+    new_file_name = (
+        f"{datetime.now().strftime('%Y%m%d%H%M%S')}-{random_string}{file_extension}"
+    )
+    return new_file_name
 
 
 def parse_date(date_string: str) -> date | str:
@@ -156,9 +158,10 @@ async def request_api(
             file
         )  # 获取文件类型 和 文件扩展名
 
-        # 用时间和随机字符串给文件重新命名
-        new_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}-{generate_random_string()}{file_extension}"
-        upload_file = rx.get_upload_dir() / new_filename  # 创建一个保存上传文件的地址，
+        new_filename = generate_filename(
+            file_extension, length=6
+        )  # 用时间和随机字符串给文件重新命名
+        upload_file = rx.get_upload_dir() / new_filename  # 创建一个保存上传文件的地址
 
         # 默认保存文件的目录时 upload_files
 
