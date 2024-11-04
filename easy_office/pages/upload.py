@@ -194,8 +194,6 @@ def ag_grid_zone() -> rx.Component:
             width="90vw",
             height="60vh",
             pagination=True,
-            pagination_page_size=10,
-            pagination_page_size_selector=[10, 50, 100],
         ),
     )
 
