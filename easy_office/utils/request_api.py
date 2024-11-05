@@ -1,16 +1,15 @@
+import base64
 import os
+import random
+import re
+import string
+from datetime import date, datetime
 from typing import Literal
 
 import httpx
-from dotenv import load_dotenv
 import reflex as rx
-import base64
-import re
 
 from .log import logger
-import string
-import random
-from datetime import date, datetime
 
 # 从环境变量中获取密钥参数
 API_KEY = os.getenv("APIKEY")
@@ -93,13 +92,11 @@ def extract_amount(amount_str: str) -> str:
     """
 
     try:
-
         result = AMOUNT_PATTERN.sub("", amount_str)
 
         return result
 
     except (ValueError, TypeError):
-
         logger.error(f"输入的 amount_str 为:{amount_str},无法正常完成解析")
         result = ""
 
@@ -135,7 +132,6 @@ async def request_api(
     """
 
     async with httpx.AsyncClient() as client:
-
         # ---------获取token-----------
 
         token_url = f"https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={API_KEY}&client_secret={SECRET_KEY}"
@@ -180,9 +176,7 @@ async def request_api(
         )
 
         match mode:
-
             case "bank_slip":
-
                 # ----------银行回单请求-------
 
                 bank_slip_url = f"https://aip.baidubce.com/rest/2.0/ocr/v1/bank_receipt_new?access_token={token}"
@@ -216,7 +210,6 @@ async def request_api(
                 return result
 
             case "vat_invoice":
-
                 # ------------发票请求-----------
 
                 vat_invoice_url = f"https://aip.baidubce.com/rest/2.0/ocr/v1/vat_invoice?access_token={token}"

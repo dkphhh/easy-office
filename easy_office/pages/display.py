@@ -1,20 +1,16 @@
+import asyncio
+import os
+from typing import AsyncGenerator, Generator
+
 import reflex as rx
 from reflex_ag_grid import ag_grid
-import os
+
 from ..models import JournalAccount
-from .upload import bank_slip_column_defs
-from .components.nav_bar import nav_bar
-from .components.check_password import check_password
 from ..utils.request_api import generate_filename, recognize_filetype
-import asyncio
+from .components.check_password import check_password
+from .components.nav_bar import nav_bar
+from .upload import bank_slip_column_defs
 
-"""
-TODO:
-1. 加一个发票上传的功能，上传完以后自动将发票文件的链接拷贝到剪贴板，提示用户可以粘贴
-2. 
-
-
-"""
 BACK_END = os.getenv("BACK_END")
 
 
@@ -24,7 +20,7 @@ class DisplayState(rx.State):
     """
 
     display_data: list[dict] = []  # 展示的数据
-    up_loading: bool = False  # 是否有发票文件在上传
+    up_loading: bool = False  # 是否有文件在上传
 
     @rx.var
     def data(self) -> list[dict]:
@@ -42,7 +38,7 @@ class DisplayState(rx.State):
         """
         self.display_data = JournalAccount.get_all_records()
 
-    def cell_value_changed(self, row, col_field, new_value) -> None:
+    def cell_value_changed(self, row, col_field, new_value) -> Generator:
         """
         实时处理用户对表格内容的修改，并更新到数据库
         Args:
@@ -64,8 +60,8 @@ class DisplayState(rx.State):
             duration=2000,
         )  # 向用户发出提示
 
-    async def upload_invoice(self, files: list[rx.UploadFile]):
-        """上传发票文件，将发票文件的链接写入用户的剪贴板
+    async def upload_file(self, files: list[rx.UploadFile]) -> AsyncGenerator:
+        """上传文件，将文件的链接写入用户的剪贴板
 
         Args:
             files:  reflex 要求上传文件是list，但是上传组件其实只会上传一个文件
@@ -100,12 +96,12 @@ class DisplayState(rx.State):
         yield
 
         yield rx.toast(
-            f"发票文件的链接：{new_filename} 已经拷贝到你的剪贴板，你可以粘贴到对应条目中。",
+            f"文件的链接：{new_filename} 已经拷贝到你的剪贴板，你可以粘贴到对应条目中。",
             close_button=True,
         )
 
 
-def upload_invoice_button() -> rx.Component:
+def upload_file_button() -> rx.Component:
     return rx.upload(
         rx.cond(
             DisplayState.up_loading,
@@ -126,9 +122,7 @@ def upload_invoice_button() -> rx.Component:
         max_size=5000000,  # 百度api最大文件限制 8mb
         no_drag=True,
         disabled=rx.cond(DisplayState.up_loading, True, False),
-        on_drop=DisplayState.upload_invoice(
-            rx.upload_files(upload_id="upload_invoice")
-        ),  # type:ignore
+        on_drop=DisplayState.upload_file(rx.upload_files(upload_id="upload_invoice")),  # type:ignore
         bg=rx.color("slate", 12),
         class_name="fixed right-20 bottom-20 rounded-full !p-4 !border-0",
     )
@@ -159,5 +153,5 @@ def display() -> rx.Component:
             align="center",
             padding="0",
         ),
-        upload_invoice_button(),
+        upload_file_button(),
     )

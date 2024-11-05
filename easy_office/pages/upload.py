@@ -1,14 +1,15 @@
-import reflex as rx
-
-from ..utils.request_api import request_api
-from reflex_ag_grid import ag_grid
-from ..models import JournalAccount
-from datetime import datetime, timedelta
 import asyncio
+from datetime import datetime, timedelta
+from typing import AsyncGenerator, Generator
+
+import reflex as rx
+from reflex_ag_grid import ag_grid
+
+from ..models import JournalAccount
+from ..utils.request_api import request_api
 
 
 class UploadState(rx.State):
-
     up_loading: bool = False
     upload_data: list[dict] = []
 
@@ -21,7 +22,7 @@ class UploadState(rx.State):
         """
         return self.upload_data
 
-    async def handle_upload(self, files: list[rx.UploadFile]) -> None:
+    async def handle_upload(self, files: list[rx.UploadFile]) -> AsyncGenerator:
         """
         调用百度云的api，上传用户传入的文件，将返回的数据赋值给 self.upload_data
         Args:
@@ -60,7 +61,6 @@ class UploadState(rx.State):
         """
 
         if col_field == "trade_date":
-
             try:
                 # 将 ISO 格式转换为 YYYY-MM-DD 格式
                 utc_date = datetime.fromisoformat(new_value.replace("Z", "+00:00"))
@@ -75,14 +75,13 @@ class UploadState(rx.State):
         else:
             self.upload_data[row][col_field] = new_value
 
-    def send_to_database(self) -> None:
+    def send_to_database(self) -> Generator:
         """
         将数据上传到数据库,刷新 upload_data，清空前端表格
         如果用户上传空数据会警告
         """
 
         if self.upload_data:
-
             JournalAccount.create_records(records=self.upload_data)
             self.upload_data = []
 
@@ -96,7 +95,7 @@ bank_slip_column_defs = [
         header_name="交易日期",
         cell_data_type="date",
         editable=True,
-        filter=ag_grid.filters.date,
+        filter=ag_grid.filters.text,
         cell_editor=ag_grid.editors.date,
     ),
     ag_grid.column_def(
@@ -130,15 +129,6 @@ bank_slip_column_defs = [
         editable=True,
         filter=ag_grid.filters.text,
         cell_editor=ag_grid.editors.text,
-        header_tooltip="""
-                搜索广告:
-                营销推广:
-                外包劳务:
-                技术服务:
-                物业支出:
-                财务分红:
-                其他支出:
-        """,
         cell_editor_params={
             "values": [
                 "搜索广告",
@@ -224,7 +214,7 @@ def upload_zone() -> rx.Component:
         multiple=True,
         # max_files=5, # Reflex 给的这个参数似乎不能限制前端上传的文件数量，所以我采用了后端验证的方式
         max_size=5000000,  # 百度api最大文件限制 8mb
-        border=f"1px dotted",
+        border="1px dotted",
         class_name="rounded-md",
         width="90vw",
         height="150px",
@@ -235,9 +225,7 @@ def upload_zone() -> rx.Component:
             "image/bmp": [".bmp"],
             "application/pdf": [".pdf"],
         },
-        on_drop=UploadState.handle_upload(
-            rx.upload_files(upload_id="upload1")
-        ),  # type:ignore
+        on_drop=UploadState.handle_upload(rx.upload_files(upload_id="upload1")),  # type:ignore
     )
 
 
