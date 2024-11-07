@@ -68,7 +68,7 @@ class UploadState(rx.State):
                 formatted_date = local_date.strftime("%Y-%m-%d")
                 self.upload_data[row][col_field] = formatted_date
 
-            except (ValueError, AttributeError):
+            except (ValueError, AttributeError):  # 如果没有收入值
                 formatted_date = ""
                 self.upload_data[row][col_field] = formatted_date
 
@@ -95,7 +95,8 @@ bank_slip_column_defs = [
         header_name="交易日期",
         cell_data_type="date",
         editable=True,
-        filter=ag_grid.filters.text,
+        sortable=False,  # type:ignore
+        filter=None,
         cell_editor=ag_grid.editors.date,
     ),
     ag_grid.column_def(
@@ -103,31 +104,34 @@ bank_slip_column_defs = [
         header_name="项目描述",
         cell_data_type="text",
         editable=True,
-        filter=ag_grid.filters.text,
+        filter=None,
         cell_editor=ag_grid.editors.text,
+        sortable=False,  # type:ignore
     ),
     ag_grid.column_def(
         field="additional_info",
         header_name="备注",
         cell_data_type="text",
         editable=True,
-        filter=ag_grid.filters.text,
+        filter=None,
         cell_editor=ag_grid.editors.text,
+        sortable=False,  # type:ignore
     ),
     ag_grid.column_def(
         field="amount",
         header_name="金额",
         cell_data_type="number",
         editable=True,
-        filter=ag_grid.filters.number,
+        filter=None,
         cell_editor=ag_grid.editors.number,
+        sortable=False,  # type:ignore
     ),
     ag_grid.column_def(
         field="category",
         header_name="分类",
         cell_data_type="text",
         editable=True,
-        filter=ag_grid.filters.text,
+        filter=None,
         cell_editor=ag_grid.editors.text,
         cell_editor_params={
             "values": [
@@ -140,38 +144,43 @@ bank_slip_column_defs = [
                 "其他支出",
             ]
         },
+        sortable=False,  # type:ignore
     ),
     ag_grid.column_def(
         field="payer",
         header_name="付款方",
         cell_data_type="text",
         editable=True,
-        filter=ag_grid.filters.text,
+        filter=None,
         cell_editor=ag_grid.editors.text,
+        sortable=False,  # type:ignore
     ),
     ag_grid.column_def(
         field="receiver",
         header_name="收款方",
         cell_data_type="text",
         editable=True,
-        filter=ag_grid.filters.text,
+        filter=None,
         cell_editor=ag_grid.editors.text,
+        sortable=False,  # type:ignore
     ),
     ag_grid.column_def(
         field="bank_slip_url",
         header_name="银行回单",
         cell_data_type="text",
         editable=True,
-        filter=ag_grid.filters.text,
+        filter=None,
         cell_editor=ag_grid.editors.text,
+        sortable=False,  # type:ignore
     ),
     ag_grid.column_def(
         field="tax_invoice_url",
         header_name="发票",
         cell_data_type="text",
         editable=True,
-        filter=ag_grid.filters.text,
+        filter=None,
         cell_editor=ag_grid.editors.text,
+        sortable=False,  # type:ignore
     ),
 ]
 
@@ -225,7 +234,9 @@ def upload_zone() -> rx.Component:
             "image/bmp": [".bmp"],
             "application/pdf": [".pdf"],
         },
-        on_drop=UploadState.handle_upload(rx.upload_files(upload_id="upload1")),  # type:ignore
+        on_drop=UploadState.handle_upload(
+            rx.upload_files(upload_id="upload1")
+        ),  # type:ignore
     )
 
 

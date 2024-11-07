@@ -1,6 +1,8 @@
 import asyncio
 import os
+from datetime import datetime, timedelta
 from typing import AsyncGenerator, Generator
+from venv import logger
 
 import reflex as rx
 from reflex_ag_grid import ag_grid
@@ -19,7 +21,7 @@ class DisplayState(rx.State):
     向用户展示数据的 State
     """
 
-    display_data: list[dict] = []  # 展示的数据
+    display_data: list[dict]  # 展示的数据
     up_loading: bool = False  # 是否有文件在上传
 
     @rx.var
@@ -41,24 +43,50 @@ class DisplayState(rx.State):
     def cell_value_changed(self, row, col_field, new_value) -> Generator:
         """
         实时处理用户对表格内容的修改，并更新到数据库
+        如果修改字段是时间，会将时间转化为 YYYY-MM-DD 格式
         Args:
             row: 修改单元格的行
             col_field: 修改单元格的列
             new_value: 单元格的更新值
         """
-        self.display_data[row][col_field] = new_value  # 获取更新数据
-        with rx.session() as session:
-            record = session.get(
-                JournalAccount, self.display_data[row]["id"]
-            )  # 通过id获取更新条目对应的数据库实例
-            if record:
-                setattr(record, col_field, new_value)  # 修改数据库内的值
-                session.commit()
 
-        yield rx.toast(
-            f"数据更新, 行: {row}, 列: {col_field}, 更新值: {new_value}",
-            duration=2000,
-        )  # 向用户发出提示
+        if new_value:
+
+            try:
+
+                if col_field == "trade_date":
+                    # AG Grid 默认是 ISO 格式，将日期转化为 YYYY-MM-DD 格式
+                    utc_date = datetime.fromisoformat(new_value.replace("Z", "+00:00"))
+                    new_value = (
+                        utc_date + timedelta(hours=8)
+                    ).date()  # 将新时间写入 new_value
+
+                self.display_data[row][col_field] = new_value  # 获取更新数据
+
+                with rx.session() as session:
+                    record = session.get(
+                        JournalAccount, self.display_data[row]["id"]
+                    )  # 通过id获取更新条目对应的数据库实例
+                    if record:
+                        setattr(record, col_field, new_value)  # 修改数据库内的值
+                        session.commit()
+
+                yield rx.toast(
+                    f"数据更新, 行: {row}, 列: {col_field}, 此时的id是{self.display_data[row]["id"]}",
+                    close_button=True,
+                    # duration=2000,
+                )  # 向用户发出提示
+
+            except (TypeError, ValueError, AttributeError) as e:
+
+                logger.error(
+                    f"在行: {row}, 列: {col_field}, 更新值: {new_value}更新时，发生报错：{e}"
+                )
+
+                yield rx.toast.error(
+                    f"在行: {row}, 列: {col_field}, 更新值: {new_value}更新时，发生报错：{e}",
+                    duration=2000,
+                )  # 向用户发出提示
 
     async def upload_file(self, files: list[rx.UploadFile]) -> AsyncGenerator:
         """上传文件，将文件的链接写入用户的剪贴板
@@ -93,8 +121,6 @@ class DisplayState(rx.State):
 
         self.up_loading = False
 
-        yield
-
         yield rx.toast(
             f"文件的链接：{new_filename} 已经拷贝到你的剪贴板，你可以粘贴到对应条目中。",
             close_button=True,
@@ -122,7 +148,9 @@ def upload_file_button() -> rx.Component:
         max_size=5000000,  # 百度api最大文件限制 8mb
         no_drag=True,
         disabled=rx.cond(DisplayState.up_loading, True, False),
-        on_drop=DisplayState.upload_file(rx.upload_files(upload_id="upload_invoice")),  # type:ignore
+        on_drop=DisplayState.upload_file(
+            rx.upload_files(upload_id="upload_invoice")
+        ),  # type:ignore
         bg=rx.color("slate", 12),
         class_name="fixed right-20 bottom-20 rounded-full !p-4 !border-0",
     )
@@ -137,6 +165,8 @@ def ag_grid_zone() -> rx.Component:
         width="90vw",
         height="90vh",
         pagination=True,
+        pagination_page_size=20,
+        pagination_page_size_selector=[20],
     )
 
 
