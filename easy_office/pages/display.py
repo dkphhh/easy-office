@@ -51,12 +51,12 @@ class DisplayState(rx.State):
         """
 
         if new_value:
-
             try:
-
                 if col_field == "trade_date":
                     # AG Grid 默认是 ISO 格式，将日期转化为 YYYY-MM-DD 格式
-                    utc_date = datetime.fromisoformat(new_value.replace("Z", "+00:00"))
+                    utc_date = datetime.fromisoformat(
+                        new_value.replace("Z", "+00:00")
+                    )
                     new_value = (
                         utc_date + timedelta(hours=8)
                     ).date()  # 将新时间写入 new_value
@@ -68,17 +68,18 @@ class DisplayState(rx.State):
                         JournalAccount, self.display_data[row]["id"]
                     )  # 通过id获取更新条目对应的数据库实例
                     if record:
-                        setattr(record, col_field, new_value)  # 修改数据库内的值
+                        setattr(
+                            record, col_field, new_value
+                        )  # 修改数据库内的值
                         session.commit()
 
                 yield rx.toast(
-                    f"数据更新, 行: {row}, 列: {col_field}, 此时的id是{self.display_data[row]["id"]}",
+                    f"数据更新, 行: {row}, 列: {col_field}, 此时的id是{self.display_data[row]['id']}",
                     close_button=True,
                     # duration=2000,
                 )  # 向用户发出提示
 
             except (TypeError, ValueError, AttributeError) as e:
-
                 logger.error(
                     f"在行: {row}, 列: {col_field}, 更新值: {new_value}更新时，发生报错：{e}"
                 )
@@ -103,11 +104,15 @@ class DisplayState(rx.State):
         await asyncio.sleep(2)
 
         file = files[0]
-        _, file_extension = recognize_filetype(file)  # 检查文件类型 和 文件扩展名
+        _, file_extension = recognize_filetype(
+            file
+        )  # 检查文件类型 和 文件扩展名
         new_filename = generate_filename(
             file_extension, length=6
         )  # 用时间和随机字符串给文件重新命名
-        upload_file = rx.get_upload_dir() / new_filename  # 创建一个保存上传文件的地址
+        upload_file = (
+            rx.get_upload_dir() / new_filename
+        )  # 创建一个保存上传文件的地址
         # 默认保存文件的目录时 upload_files
 
         upload_data = await file.read()
@@ -125,6 +130,9 @@ class DisplayState(rx.State):
             f"文件的链接：{new_filename} 已经拷贝到你的剪贴板，你可以粘贴到对应条目中。",
             close_button=True,
         )
+
+        def create_new_record(self, form_data) -> None:
+            pass
 
 
 def upload_file_button() -> rx.Component:
@@ -165,12 +173,17 @@ def ag_grid_zone() -> rx.Component:
         width="90vw",
         height="90vh",
         pagination=True,
-        pagination_page_size=20,
-        pagination_page_size_selector=[20],
+        pagination_page_size=12,
+        # 为了解决更新数据时，组件被强制刷新造成的前端抖动，一页设置的展示不能太多
+        pagination_page_size_selector=[12],
     )
 
 
-@rx.page(route="/display", title="账目一览-EasyFinance", on_load=DisplayState.load_data)
+@rx.page(
+    route="/display",
+    title="账目一览-EasyFinance",
+    on_load=DisplayState.load_data,
+)
 @check_password
 def display() -> rx.Component:
     return rx.fragment(

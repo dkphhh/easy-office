@@ -29,7 +29,7 @@ def recognize_filetype(file: rx.UploadFile) -> tuple[str, str]:
     Returns: 返回一个元组 (文件类型,扩展名)
 
     """
-    filename = file.filename.lower()
+    filename = file.filename.lower()  # type: ignore
     image_extensions = (".jpg", ".jpeg", ".png", ".bmp")
     file_extension = (
         "." + filename.split(".")[-1] if "." in filename else ""
@@ -119,7 +119,7 @@ def process_bank_slip(words_result: dict) -> dict:
 
 async def request_api(
     file: rx.UploadFile, mode: Literal["bank_slip", "vat_invoice"]
-) -> dict:
+) -> dict | None:
     """
     想百度api发出请求，将文件（图片/pdf）上传，根据模式不同上传到不同的 api 接口
     Args:

@@ -144,7 +144,6 @@ bank_slip_column_defs = [
                 "其他支出",
             ]
         },
-        header_tooltip="测试",
         sortable=False,  # type:ignore
     ),
     ag_grid.column_def(
