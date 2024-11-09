@@ -98,6 +98,8 @@ platformdirs==4.3.6
     #   reflex-hosting-cli
 psutil==6.0.0
     # via reflex
+psycopg2-binary==2.9.10
+    # via easy-office (pyproject.toml)
 pydantic==2.9.2
     # via
     #   fastapi
