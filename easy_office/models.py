@@ -6,7 +6,6 @@ import reflex as rx
 from sqlmodel import Field, select
 
 
-
 class JournalAccount(rx.Model, table=True):
     id: Annotated[int | None, Field(primary_key=True)] = None
     trade_date: Annotated[date, Field(index=True)] = (
@@ -22,12 +21,18 @@ class JournalAccount(rx.Model, table=True):
     receiver: Annotated[str, Field(index=True, max_length=255)] = ""  # 收款方
     bank_slip_url: str = ""  # 银行回单文件链接
     tax_invoice_url: str = ""  # 发票文件链接
-    created_datetime: datetime = datetime.now()  # 记录生成时间
+    created_datetime: datetime = Field(default_factory=datetime.now)  # 记录生成时间
+
+    def serialize(self) -> dict:
+        """在序列化时，将 amount 改为 str"""
+        data = self.model_dump()
+        data["amount"] = str(data["amount"])
+        return data
 
     @classmethod
     def create_empty_record(cls) -> "JournalAccount":
         with rx.session() as session:
-            new_record = JournalAccount()
+            new_record = JournalAccount()  # type:ignore
             session.add(new_record)
             session.commit()
 
@@ -39,17 +44,6 @@ class JournalAccount(rx.Model, table=True):
             new_records = []
 
             for record in records:
-
-                print(
-                    f"""record["amount"]:{record["amount"]} is {type(record["amount"])}"""
-                )
-
-                if isinstance(record["amount"], str):
-                    record["amount"] = Decimal(record["amount"])
-
-                    print(
-                        f"""此时，record["amount"]：{record["amount"]} is {type(record["amount"])}"""
-                    )
 
                 new_record = JournalAccount(**record)
                 new_records.append(new_record)
@@ -65,10 +59,22 @@ class JournalAccount(rx.Model, table=True):
     @classmethod
     def get_all_records(cls) -> list[dict]:
         with rx.session() as session:
-            records = session.exec(select(JournalAccount)).all()
-            result = [record.model_dump() for record in records]
+            records = session.exec(
+                select(JournalAccount).order_by(
+                    JournalAccount.created_datetime.desc()  # type:ignore
+                )
+            ).all()
+            result = [record.serialize() for record in records]
             return result
 
 
 if __name__ == "__main__":
-    pass
+    with rx.session() as session:
+        records = session.exec(select(JournalAccount)).all()
+        result = [record.model_dump() for record in records]
+        for record in result:
+            record["amount"] = str(record["amount"])
+
+        print(result)
+        print(result[0]["amount"])
+        print(type(result[0]["amount"]))

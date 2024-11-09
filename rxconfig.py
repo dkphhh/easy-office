@@ -16,7 +16,7 @@ db_port = os.getenv("DB_PORT")
 def get_db_connection():
     username = db_username
     password = urllib.parse.quote_plus(db_password)
-    host = db_host  # 或者你的服务器 IP
+    host = db_host
     port = db_port
     database = "postgres"
 

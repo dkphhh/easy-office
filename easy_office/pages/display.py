@@ -32,6 +32,7 @@ class DisplayState(rx.State):
         Returns: 展示的数据
 
         """
+
         return self.display_data
 
     def load_data(self) -> None:
@@ -54,9 +55,7 @@ class DisplayState(rx.State):
             try:
                 if col_field == "trade_date":
                     # AG Grid 默认是 ISO 格式，将日期转化为 YYYY-MM-DD 格式
-                    utc_date = datetime.fromisoformat(
-                        new_value.replace("Z", "+00:00")
-                    )
+                    utc_date = datetime.fromisoformat(new_value.replace("Z", "+00:00"))
                     new_value = (
                         utc_date + timedelta(hours=8)
                     ).date()  # 将新时间写入 new_value
@@ -68,9 +67,7 @@ class DisplayState(rx.State):
                         JournalAccount, self.display_data[row]["id"]
                     )  # 通过id获取更新条目对应的数据库实例
                     if record:
-                        setattr(
-                            record, col_field, new_value
-                        )  # 修改数据库内的值
+                        setattr(record, col_field, new_value)  # 修改数据库内的值
                         session.commit()
 
                 yield rx.toast(
@@ -104,15 +101,11 @@ class DisplayState(rx.State):
         await asyncio.sleep(2)
 
         file = files[0]
-        _, file_extension = recognize_filetype(
-            file
-        )  # 检查文件类型 和 文件扩展名
+        _, file_extension = recognize_filetype(file)  # 检查文件类型 和 文件扩展名
         new_filename = generate_filename(
             file_extension, length=6
         )  # 用时间和随机字符串给文件重新命名
-        upload_file = (
-            rx.get_upload_dir() / new_filename
-        )  # 创建一个保存上传文件的地址
+        upload_file = rx.get_upload_dir() / new_filename  # 创建一个保存上传文件的地址
         # 默认保存文件的目录时 upload_files
 
         upload_data = await file.read()
