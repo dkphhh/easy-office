@@ -1,12 +1,19 @@
 import asyncio
+import os
 from datetime import datetime, timedelta
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator
 
 import reflex as rx
 from reflex_ag_grid import ag_grid
 
-from ..models import JournalAccount
-from ..utils.request_api import request_api
+from ..utils.request_api import (
+    create_new_record,
+    generate_filename,
+    recognize_filetype,
+    request_baidu_ocr,
+)
+
+BACK_END = os.getenv("BACK_END")
 
 
 class UploadState(rx.State):
@@ -22,7 +29,7 @@ class UploadState(rx.State):
         """
         return self.upload_data
 
-    async def handle_upload(self, files: list[rx.UploadFile]) -> AsyncGenerator:
+    async def upload_for_ocr(self, files: list[rx.UploadFile]) -> AsyncGenerator:
         """
         调用百度云的api，上传用户传入的文件，将返回的数据赋值给 self.upload_data
         Args:
@@ -41,14 +48,52 @@ class UploadState(rx.State):
                 # print(len(files))
                 # print([file.filename for file in files])
                 # await asyncio.sleep(2)
-                tasks = [request_api(file=file, mode="bank_slip") for file in files]
+                tasks = [
+                    request_baidu_ocr(file=file, mode="bank_slip") for file in files
+                ]
                 resp_list = await asyncio.gather(*tasks)
                 self.upload_data.extend(resp_list)
-            except ValueError as e:
-                yield rx.toast.error(f"系统报错：{e}")
+            except Exception as e:
+                yield rx.toast.error(f"{e}", close_button=True)
 
             finally:
                 self.up_loading = False
+
+    async def upload_file(self, files: list[rx.UploadFile]) -> AsyncGenerator:
+        """上传文件，将文件的链接写入用户的剪贴板
+
+        Args:
+            files:  reflex 要求上传文件是list，但是上传组件其实只会上传一个文件
+
+        """
+
+        self.up_loading = True
+
+        yield
+
+        file = files[0]
+        _, file_extension = recognize_filetype(file)  # 检查文件类型 和 文件扩展名
+        new_filename = generate_filename(
+            file_extension, length=6
+        )  # 用时间和随机字符串给文件重新命名
+        upload_file = rx.get_upload_dir() / new_filename  # 创建一个保存上传文件的地址
+        # 默认保存文件的目录时 upload_files
+
+        upload_data = await file.read()
+
+        with upload_file.open("wb") as file_object:
+            file_object.write(upload_data)  # 把文件保存到指定目录
+
+        file_url = f"{BACK_END}/_upload/{new_filename}"
+
+        yield rx.set_clipboard(file_url)
+
+        self.up_loading = False
+
+        yield rx.toast(
+            f"文件的链接：{file_url} 已经拷贝到你的剪贴板，你可以粘贴到对应条目中。",
+            close_button=True,
+        )
 
     def cell_value_changed(self, row, col_field, new_value) -> None:
         """
@@ -75,18 +120,35 @@ class UploadState(rx.State):
         else:
             self.upload_data[row][col_field] = new_value
 
-    def send_to_database(self) -> Generator:
+    async def send_to_database(self):
         """
         将数据上传到数据库,刷新 upload_data，清空前端表格
         如果用户上传空数据会警告
         """
+        try:
 
-        if self.upload_data:
-            JournalAccount.create_records(records=self.upload_data)
-            self.upload_data = []
+            if self.upload_data:
 
-        else:
-            yield rx.toast.error("数据为空！", duration=2000)
+                self.up_loading = True
+
+                yield
+
+                tasks = [
+                    create_new_record(record=record) for record in self.upload_data
+                ]
+
+                await asyncio.gather(*tasks)
+
+                # JournalAccount.create_records(records=self.upload_data)
+                self.up_loading = False
+                self.upload_data = []
+
+            else:
+                yield rx.toast.error("数据为空！", close_button=True)
+
+        except Exception as e:
+
+            yield rx.toast.error(f"{e}", close_button=True)
 
 
 bank_slip_column_defs = [
@@ -234,9 +296,48 @@ def upload_zone() -> rx.Component:
             "image/bmp": [".bmp"],
             "application/pdf": [".pdf"],
         },
-        on_drop=UploadState.handle_upload(
+        on_drop=UploadState.upload_for_ocr(
             rx.upload_files(upload_id="upload1")
         ),  # type:ignore
+    )
+
+
+def send_records_button() -> rx.Component:
+    return rx.button(
+        "发送数据",
+        on_click=UploadState.send_to_database,
+        color=rx.color("slate", 2),
+        bg=rx.color("slate", 12),
+        loading=UploadState.up_loading,
+    )
+
+
+def upload_file_button() -> rx.Component:
+    return rx.upload(
+        rx.cond(
+            UploadState.up_loading,
+            rx.flex(
+                rx.spinner(size="3", color=rx.color("slate", 2)),
+                class_name="w-6 h-6 justify-center items-center",
+            ),
+            rx.icon("file-up", size=24, color=rx.color("slate", 2)),
+        ),
+        id="upload_file",
+        multiple=False,
+        accept={
+            "application/pdf": [".pdf"],
+            "image/png": [".png"],
+            "image/bmp": [".bmp"],
+            "image/jpeg": [".jpg", ".jpeg"],
+        },
+        max_size=5000000,  # 限制文件大小
+        no_drag=True,
+        disabled=rx.cond(UploadState.up_loading, True, False),
+        on_drop=UploadState.upload_file(
+            rx.upload_files(upload_id="upload_file")
+        ),  # type:ignore
+        bg=rx.color("slate", 12),
+        class_name="fixed right-10 bottom-10 rounded-full !p-2 !border-0",
     )
 
 
@@ -244,12 +345,8 @@ def upload_and_send() -> rx.Component:
     return rx.vstack(
         upload_zone(),
         ag_grid_zone(),
-        rx.button(
-            "上传数据",
-            on_click=UploadState.send_to_database,
-            color=rx.color("slate", 2),
-            bg=rx.color("slate", 12),
-        ),
+        send_records_button(),
+        upload_file_button(),
         width="100%",
         align="center",
         justify="center",

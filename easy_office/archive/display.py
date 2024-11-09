@@ -7,11 +7,11 @@ from venv import logger
 import reflex as rx
 from reflex_ag_grid import ag_grid
 
-from ..models import JournalAccount
-from ..utils.request_api import generate_filename, recognize_filetype
-from .components.check_password import check_password
-from .components.nav_bar import nav_bar
-from .upload import bank_slip_column_defs
+from ...models import JournalAccount
+from ...utils.request_api import generate_filename, recognize_filetype
+from ..components.check_password import check_password
+from ..components.nav_bar import nav_bar
+from ..upload import bank_slip_column_defs
 
 BACK_END = os.getenv("BACK_END")
 
@@ -98,8 +98,6 @@ class DisplayState(rx.State):
 
         yield
 
-        await asyncio.sleep(2)
-
         file = files[0]
         _, file_extension = recognize_filetype(file)  # 检查文件类型 和 文件扩展名
         new_filename = generate_filename(
@@ -146,7 +144,7 @@ def upload_file_button() -> rx.Component:
             "image/bmp": [".bmp"],
             "image/jpeg": [".jpg", ".jpeg"],
         },
-        max_size=5000000,  # 百度api最大文件限制 8mb
+        max_size=5000000,  # 限制最大文件大小
         no_drag=True,
         disabled=rx.cond(DisplayState.up_loading, True, False),
         on_drop=DisplayState.upload_file(

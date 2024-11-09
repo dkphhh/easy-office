@@ -1,1 +1,1 @@
-from .pages import upload, index, display
+from .pages import index, upload

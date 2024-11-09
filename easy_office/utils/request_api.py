@@ -1,8 +1,10 @@
+import asyncio
 import base64
 import os
 import random
 import re
 import string
+import time
 from datetime import date, datetime
 from typing import Literal
 
@@ -19,6 +21,9 @@ BACK_END = os.getenv("BACK_END")
 
 DATE_TO_REMOVE = "-/\\.:：年月日时秒分 "
 AMOUNT_PATTERN = re.compile(r"[^\d.]")
+
+
+# ================  请求百度 ocr api ====================
 
 
 def recognize_filetype(file: rx.UploadFile) -> tuple[str, str]:
@@ -44,8 +49,15 @@ def recognize_filetype(file: rx.UploadFile) -> tuple[str, str]:
         raise TypeError("未知文件类型")
 
 
+def generate_random_string(length: int = 12) -> str:
+    """生成指定长度的随机字符串"""
+    # 定义字符池
+    characters = string.ascii_letters + string.digits  # 包含大小写字母和数字
+    return "".join(random.choice(characters) for _ in range(length))
+
+
 def generate_filename(file_extension: str, length=6) -> str:
-    """生成随机6位字符串
+    """生成随机字符串,格式：时间+6位随机字符
     Args:
         file_extension：文件扩展名
         length: 字符串长度
@@ -117,7 +129,7 @@ def process_bank_slip(words_result: dict) -> dict:
     }
 
 
-async def request_api(
+async def request_baidu_ocr(
     file: rx.UploadFile, mode: Literal["bank_slip", "vat_invoice"]
 ) -> dict | None:
     """
@@ -134,6 +146,10 @@ async def request_api(
     async with httpx.AsyncClient() as client:
         # ---------获取token-----------
 
+        task_id = generate_random_string()  # 用于记录运行日志
+
+        logger.info(f"开始执行任务，task_id：{task_id}")
+
         token_url = f"https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={API_KEY}&client_secret={SECRET_KEY}"
 
         token_payload = ""
@@ -141,39 +157,45 @@ async def request_api(
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
+        try:
+            token_res = await client.post(
+                token_url, json=token_payload, headers=token_headers
+            )
 
-        token_res = await client.post(
-            token_url, json=token_payload, headers=token_headers
-        )
+            token = token_res.json()["access_token"]
 
-        token = token_res.json()["access_token"]
+            # ----处理文件-------
 
-        # ----处理文件-----
+            filetype, file_extension = recognize_filetype(
+                file
+            )  # 获取文件类型 和 文件扩展名
 
-        filetype, file_extension = recognize_filetype(
-            file
-        )  # 获取文件类型 和 文件扩展名
+            new_filename = generate_filename(
+                file_extension, length=6
+            )  # 用时间和随机字符串给文件重新命名
+            upload_file = (
+                rx.get_upload_dir() / new_filename
+            )  # 创建一个保存上传文件的地址
 
-        new_filename = generate_filename(
-            file_extension, length=6
-        )  # 用时间和随机字符串给文件重新命名
-        upload_file = rx.get_upload_dir() / new_filename  # 创建一个保存上传文件的地址
+            # 默认保存文件的目录时 upload_files
 
-        # 默认保存文件的目录时 upload_files
+            upload_data = await file.read()
 
-        upload_data = await file.read()
+            with upload_file.open("wb") as file_object:
+                file_object.write(upload_data)  # 把文件保存到指定目录
 
-        with upload_file.open("wb") as file_object:
-            file_object.write(upload_data)  # 把文件保存到指定目录
+            # 输出文件的 base64 字符串
+            file_b64 = base64.b64encode(upload_data).decode("utf-8")
 
-        # 输出文件的 base64 字符串
-        file_b64 = base64.b64encode(upload_data).decode("utf-8")
+            # 请求api的参数
+            request_headers = {"Content-Type": "application/x-www-form-urlencoded"}
+            request_payload = (
+                {"image": file_b64} if filetype == "img" else {"pdf_file": file_b64}
+            )
+        except Exception as e:
 
-        # 请求api的参数
-        request_headers = {"Content-Type": "application/x-www-form-urlencoded"}
-        request_payload = (
-            {"image": file_b64} if filetype == "img" else {"pdf_file": file_b64}
-        )
+            logger.error(f"task_id:{task_id};准备阶段，运行时出现错误:{e}")
+            raise (f"准备阶段，运行时出现错误:{e}")
 
         match mode:
             case "bank_slip":
@@ -188,7 +210,7 @@ async def request_api(
                 bank_slip_result = bank_slip_res.json()
 
                 logger.info(
-                    f"正在处理文件：{file.filename};API返回的银行回单信息：{bank_slip_result}"
+                    f"task-id:{task_id};正在处理文件：{file.filename};API返回的银行回单信息：{bank_slip_result}"
                 )
 
                 words_result: dict = bank_slip_result["words_result"]
@@ -196,14 +218,16 @@ async def request_api(
                 # 校验api 回传数据是否都是空值
                 validate_result = [i[0]["word"] for i in words_result.values()]
                 if all(i == "" for i in validate_result):
-                    logger.error(f"系统报错：「{file.filename}」似乎不是银行回单")
-                    raise ValueError(
-                        f"用户上传的文件「{file.filename}」似乎不是银行回单"
+                    logger.error(
+                        f"task-id:{task_id};上传的文件：「{file.filename}」似乎不是银行回单"
                     )
+                    raise ValueError(f"上传的文件「{file.filename}」似乎不是银行回单")
 
                 result = process_bank_slip(words_result)
 
                 result["bank_slip_url"] = f"{BACK_END}/_upload/{new_filename}"
+
+                result["task_id"] = task_id
 
                 logger.info(result)
 
@@ -226,5 +250,125 @@ async def request_api(
                 raise AttributeError("识别模式错误！")
 
 
+# ================== 请求飞书多为表格 api =====================
+
+
+async def create_new_record(record: dict):
+
+    async with httpx.AsyncClient() as client:
+
+        task_id = record.get("task_id", "")
+
+        try:
+
+            # --------- 获取token -------
+
+            get_token_url = (
+                "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
+            )
+
+            get_token_header = {
+                "Content-Type": "application/json;charset=utf-8",
+            }
+
+            get_token_body = {
+                "app_id": "cli_a7a5d48eeab81013",
+                "app_secret": "UHPs2ZgElNwadOaa0GXDsdQdnmorcKLV",
+            }
+
+            token_resp = await client.post(
+                url=get_token_url, headers=get_token_header, json=get_token_body
+            )
+
+            token_resp = token_resp.json()
+
+            tenant_access_token = token_resp["tenant_access_token"]
+
+        except Exception as e:
+
+            logger.error(f"task_id:{task_id};未能获取飞书 API 访问凭证，发生错误：{e}")
+
+            raise (f"未能获取飞书 API 访问凭证，发生错误：{e}")
+
+        # --------新增记录---------
+
+        app_token = "MFoQbIqCNaujgzsn7vOcTfpBnjb"
+
+        table_id = "tblrtFGd80L0Z0Hk"
+
+        create_record_url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records"
+
+        create_record_header = {
+            "Authorization": f"Bearer {tenant_access_token}",
+            "Content-Type": "application/json;charset=utf-8",
+        }
+
+        try:
+
+            trade_date: date = record["trade_date"]
+            # 飞书要求日期字段是毫秒级精度的 Unix 时间戳
+            timestamp = int(time.mktime(trade_date.timetuple()) * 1000)
+
+        except Exception as e:
+
+            logger.error(f"task_id:{task_id};时间戳生成错误：{e}")
+
+            raise (f"时间戳生成错误：{e}")
+
+        create_record_body = {
+            "fields": {
+                "交易日期": timestamp,
+                "描述": record.get("description", ""),
+                "备注": record.get("additional_info", ""),
+                "金额": float(record.get("amount", 0)),
+                "分类": record.get("category", ""),
+                "付款方": record.get("payer", ""),
+                "收款方": record.get("receiver", ""),
+                "回单链接": record.get("bank_slip_url", ""),
+                "发票链接": record.get("tax_invoice_url", ""),
+            },
+        }
+
+        logger.info(f"task_id:{task_id};准备发送到飞书文档的数据:{create_record_body}")
+
+        create_record_resp = await client.post(
+            url=create_record_url,
+            headers=create_record_header,
+            json=create_record_body,
+        )
+
+        create_record_resp = create_record_resp.json()
+
+        code = create_record_resp.get("code")
+
+        match code:
+
+            case 0:
+                logger.info(f"task_id:{task_id};成功上传到飞书文档。")
+
+            case _:
+
+                logger.error(
+                    f"task_id:{task_id};未能成功上传数据到飞书文档，发生错误：{create_record_resp}"
+                )
+                raise Exception(
+                    f"task_id:{task_id};未能成功上传数据到飞书文档，发生错误：{create_record_resp}"
+                )
+
+
 if __name__ == "__main__":
-    pass
+    record = {
+        "trade_date": date.today(),
+        "description": "这是描述",
+        "additional_info": "",
+        "amount": "123.60",
+        "category": "",
+        "payer": "测试付款方",
+        "receiver": "测试收款方",
+        "bank_slip_url": "http://101.201.153.207:8000/_upload/20241105203551-AJiWAH.pdf",
+        "tax_invoice_url": "http://101.201.153.207:8000/_upload/20241105203551-AJiWAH.pdf",
+    }
+
+    resp = asyncio.run(create_new_record(record=record))
+
+    print(resp)

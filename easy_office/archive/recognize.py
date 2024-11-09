@@ -5,12 +5,10 @@ from base64 import b64encode
 from datetime import datetime
 from typing import Generator
 
-import polars as pl
 import reflex as rx
 
-
-from ..utils.log import logger
-from ..utils.request_api import request_api
+from ...utils.log import logger
+from ...utils.request_api import request_baidu_ocr
 
 # 银行回单的表头
 BANK_SLIP_COLUMNS: list[dict[str, str]] = [
@@ -281,7 +279,7 @@ class UploadFile(rx.State):
             file_base64 = b64encode(file_content).decode(
                 "utf-8"
             )  # 将接收的文件批量转化为base64编码
-            resp = await request_api(file_base64)
+            resp = await request_baidu_ocr(file_base64)
             if not resp or "result_type" not in resp or "result_data" not in resp:
                 raise ValueError(
                     f"API 返回了无效的响应: {resp}"
