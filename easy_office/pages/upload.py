@@ -253,7 +253,6 @@ def ag_grid_zone() -> rx.Component:
             on_cell_value_changed=UploadState.cell_value_changed,
             width="90vw",
             height="60vh",
-            pagination=True,
         ),
     )
 
