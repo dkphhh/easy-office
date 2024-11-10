@@ -223,7 +223,7 @@ bank_slip_column_defs = [
         cell_data_type="text",
         editable=True,
         filter=None,
-        cell_editor=ag_grid.editors.text,
+        cell_editor=ag_grid.editors.text, 
         sortable=False,  # type:ignore
     ),
     ag_grid.column_def(
