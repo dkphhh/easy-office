@@ -30,7 +30,10 @@ class NavItem(rx.Base):
 class NavBarState(rx.State):
     items: list[NavItem] = [
         NavItem(name="快捷记账", path="/"),
-        NavItem(name="账目一览", path="/display"),
+        NavItem(
+            name="账目一览",
+            path="https://yuanwang.feishu.cn/base/MFoQbIqCNaujgzsn7vOcTfpBnjb?table=tblrtFGd80L0Z0Hk&view=vewfVnLasa",
+        ),
     ]
 
 

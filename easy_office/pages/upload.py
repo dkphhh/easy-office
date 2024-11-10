@@ -126,9 +126,7 @@ class UploadState(rx.State):
         如果用户上传空数据会警告
         """
         try:
-
             if self.upload_data:
-
                 self.up_loading = True
 
                 yield
@@ -147,7 +145,6 @@ class UploadState(rx.State):
                 yield rx.toast.error("数据为空！", close_button=True)
 
         except Exception as e:
-
             yield rx.toast.error(f"{e}", close_button=True)
 
 
@@ -223,7 +220,7 @@ bank_slip_column_defs = [
         cell_data_type="text",
         editable=True,
         filter=None,
-        cell_editor=ag_grid.editors.text, 
+        cell_editor=ag_grid.editors.text,
         sortable=False,  # type:ignore
     ),
     ag_grid.column_def(
@@ -314,13 +311,21 @@ def send_records_button() -> rx.Component:
 
 def upload_file_button() -> rx.Component:
     return rx.upload(
-        rx.cond(
-            UploadState.up_loading,
-            rx.flex(
-                rx.spinner(size="3", color=rx.color("slate", 2)),
-                class_name="w-6 h-6 justify-center items-center",
+        rx.vstack(
+            rx.cond(
+                UploadState.up_loading,
+                rx.flex(
+                    rx.spinner(size="3", color=rx.color("slate", 2)),
+                    class_name="w-6 h-6 justify-center items-center",
+                ),
+                rx.tooltip(
+                    rx.icon("file-up", size=24, color=rx.color("slate", 2)),
+                    content="将其他文件上传到服务器",
+                ),
             ),
-            rx.icon("file-up", size=24, color=rx.color("slate", 2)),
+            justify="center",
+            align="center",
+            spacing="1",
         ),
         id="upload_file",
         multiple=False,
@@ -337,7 +342,7 @@ def upload_file_button() -> rx.Component:
             rx.upload_files(upload_id="upload_file")
         ),  # type:ignore
         bg=rx.color("slate", 12),
-        class_name="fixed right-10 bottom-10 rounded-full !p-2 !border-0",
+        class_name="fixed right-10 bottom-10 rounded-full !p-2  !border-0",
     )
 
 
@@ -347,6 +352,7 @@ def upload_and_send() -> rx.Component:
         ag_grid_zone(),
         send_records_button(),
         upload_file_button(),
+        class_name="",
         width="100%",
         align="center",
         justify="center",
