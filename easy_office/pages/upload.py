@@ -1,9 +1,11 @@
 import asyncio
 import os
 from datetime import datetime, timedelta
+from io import BytesIO
 from typing import AsyncGenerator
 
 import reflex as rx
+from pypdf import PdfReader, PdfWriter
 from reflex_ag_grid import ag_grid
 
 from ..utils.request_api import (
@@ -29,7 +31,10 @@ class UploadState(rx.State):
         """
         return self.upload_data
 
-    async def upload_for_ocr(self, files: list[rx.UploadFile]) -> AsyncGenerator:
+    @rx.event
+    async def upload_for_ocr(
+        self, files: list[rx.UploadFile]
+    ) -> AsyncGenerator:
         """
         调用百度云的api，上传用户传入的文件，将返回的数据赋值给 self.upload_data
         Args:
@@ -41,25 +46,79 @@ class UploadState(rx.State):
         yield
 
         if len(files) > 5:
-            yield rx.toast.error(f"一次最多传5个文件，你传了{len(files)}个")
+            yield rx.toast.error(
+                f"一次最多传5个文件，你传了{len(files)}个"
+            )
+            raise AttributeError(
+                f"一次最多传5个文件，你传了{len(files)}个"
+            )
 
-        else:
-            try:
-                # print(len(files))
-                # print([file.filename for file in files])
-                # await asyncio.sleep(2)
-                tasks = [
-                    request_baidu_ocr(file=file, mode="bank_slip") for file in files
-                ]
-                resp_list = await asyncio.gather(*tasks)
-                self.upload_data.extend(resp_list)
-            except Exception as e:
-                yield rx.toast.error(f"{e}", close_button=True)
+        try:
+            tasks = []
+            for file in files:
+                filetype, _ = recognize_filetype(file)
+                match filetype:
+                    case "img":
+                        tasks.append(
+                            request_baidu_ocr(
+                                file=file,
+                                mode="bank_slip",
+                            )
+                        )
 
-            finally:
-                self.up_loading = False
+                    case "pdf":
+                        reader = PdfReader(
+                            file.file
+                        )  # 执行本句后，文件指针在文件末尾
 
-    async def upload_file(self, files: list[rx.UploadFile]) -> AsyncGenerator:
+                        if len(reader.pages) == 1:
+                            file.file.seek(0)  # 重置指针
+                            tasks.append(
+                                request_baidu_ocr(
+                                    file=file,
+                                    mode="bank_slip",
+                                )
+                            )
+
+                        else:
+                            for page in reader.pages:
+                                writer = PdfWriter()
+                                writer.add_page(page=page)
+                                bytes_stream = BytesIO()
+                                writer.write(
+                                    bytes_stream
+                                )  # 执行本句后，文件指针在 BytesIO 末尾
+                                bytes_stream.seek(
+                                    0
+                                )  # 重置指针
+                                split_pdf = rx.UploadFile(
+                                    file=bytes_stream,
+                                    filename=f"{file.filename}-{generate_filename(file_extension=".pdf")}",
+                                )
+
+                                tasks.append(
+                                    request_baidu_ocr(
+                                        file=split_pdf,
+                                        mode="bank_slip",
+                                    )
+                                )
+
+            resp_list = await asyncio.gather(*tasks)
+
+            self.upload_data.extend(resp_list)  # type:ignore
+
+        except Exception as e:
+            yield rx.toast.error(f"{e}", close_button=True)
+
+            raise e
+
+        finally:
+            self.up_loading = False
+
+    @rx.event
+    async def upload_file(
+        self, files: list[rx.UploadFile]
+    ) -> AsyncGenerator:
         """上传文件，将文件的链接写入用户的剪贴板
 
         Args:
@@ -72,20 +131,26 @@ class UploadState(rx.State):
         yield
 
         file = files[0]
-        _, file_extension = recognize_filetype(file)  # 检查文件类型 和 文件扩展名
+        _, file_extension = recognize_filetype(
+            file
+        )  # 检查文件类型 和 文件扩展名
         new_filename = generate_filename(
             file_extension, length=6
         )  # 用时间和随机字符串给文件重新命名
-        upload_file = rx.get_upload_dir() / new_filename  # 创建一个保存上传文件的地址
+        upload_file = (
+            rx.get_upload_dir() / new_filename
+        )  # 创建一个保存上传文件的地址
         # 默认保存文件的目录时 upload_files
 
         upload_data = await file.read()
 
         with upload_file.open("wb") as file_object:
-            file_object.write(upload_data)  # 把文件保存到指定目录
+            file_object.write(
+                upload_data
+            )  # 把文件保存到指定目录
 
         file_url = f"{BACK_END}/_upload/{new_filename}"
-
+        # 将文件链接写入剪贴板
         yield rx.set_clipboard(file_url)
 
         self.up_loading = False
@@ -95,7 +160,10 @@ class UploadState(rx.State):
             close_button=True,
         )
 
-    def cell_value_changed(self, row, col_field, new_value) -> None:
+    @rx.event
+    def cell_value_changed(
+        self, row, col_field, new_value
+    ) -> None:
         """
         同步更新表格
         Args:
@@ -108,18 +176,30 @@ class UploadState(rx.State):
         if col_field == "trade_date":
             try:
                 # 将 ISO 格式转换为 YYYY-MM-DD 格式
-                utc_date = datetime.fromisoformat(new_value.replace("Z", "+00:00"))
+                utc_date = datetime.fromisoformat(
+                    new_value.replace("Z", "+00:00")
+                )
                 local_date = utc_date + timedelta(hours=8)
-                formatted_date = local_date.strftime("%Y-%m-%d")
-                self.upload_data[row][col_field] = formatted_date
+                formatted_date = local_date.strftime(
+                    "%Y-%m-%d"
+                )
+                self.upload_data[row][col_field] = (
+                    formatted_date
+                )
 
-            except (ValueError, AttributeError):  # 如果没有收入值
+            except (
+                ValueError,
+                AttributeError,
+            ):  # 如果没有收入值
                 formatted_date = ""
-                self.upload_data[row][col_field] = formatted_date
+                self.upload_data[row][col_field] = (
+                    formatted_date
+                )
 
         else:
             self.upload_data[row][col_field] = new_value
 
+    @rx.event
     async def send_to_database(self):
         """
         将数据上传到数据库,刷新 upload_data，清空前端表格
@@ -132,7 +212,8 @@ class UploadState(rx.State):
                 yield
 
                 tasks = [
-                    create_new_record(record=record) for record in self.upload_data
+                    create_new_record(record=record)
+                    for record in self.upload_data
                 ]
 
                 await asyncio.gather(*tasks)
@@ -142,7 +223,9 @@ class UploadState(rx.State):
                 self.upload_data = []
 
             else:
-                yield rx.toast.error("数据为空！", close_button=True)
+                yield rx.toast.error(
+                    "数据为空！", close_button=True
+                )
 
         except Exception as e:
             yield rx.toast.error(f"{e}", close_button=True)
@@ -268,9 +351,17 @@ def upload_zone() -> rx.Component:
                 height="100%",
             ),
             rx.vstack(
-                rx.text("点击方框，或将文件拖入框内", size="1"),
-                rx.text("支持 .jpg .jpeg .png .bmp .pdf 文件", size="1"),
-                rx.text("最多同时上传5个文件，单文件最大5mb", size="1"),
+                rx.text(
+                    "点击方框，或将文件拖入框内", size="1"
+                ),
+                rx.text(
+                    "支持 .jpg .jpeg .png .bmp .pdf 文件",
+                    size="1",
+                ),
+                rx.text(
+                    "最多同时上传5个文件，单文件最大5mb",
+                    size="1",
+                ),
                 spacing="1",
                 height="100%",
                 justify="center",
@@ -293,7 +384,7 @@ def upload_zone() -> rx.Component:
             "application/pdf": [".pdf"],
         },
         on_drop=UploadState.upload_for_ocr(
-            rx.upload_files(upload_id="upload1")
+            rx.upload_files(upload_id="upload1")  # type:ignore
         ),  # type:ignore
     )
 
@@ -314,11 +405,17 @@ def upload_file_button() -> rx.Component:
             rx.cond(
                 UploadState.up_loading,
                 rx.flex(
-                    rx.spinner(size="3", color=rx.color("slate", 2)),
+                    rx.spinner(
+                        size="3", color=rx.color("slate", 2)
+                    ),
                     class_name="w-6 h-6 justify-center items-center",
                 ),
                 rx.tooltip(
-                    rx.icon("file-up", size=24, color=rx.color("slate", 2)),
+                    rx.icon(
+                        "file-up",
+                        size=24,
+                        color=rx.color("slate", 2),
+                    ),
                     content="将其他文件上传到服务器",
                 ),
             ),
@@ -336,10 +433,12 @@ def upload_file_button() -> rx.Component:
         },
         max_size=5000000,  # 限制文件大小
         no_drag=True,
-        disabled=rx.cond(UploadState.up_loading, True, False),
+        disabled=rx.cond(
+            UploadState.up_loading, True, False
+        ),
         on_drop=UploadState.upload_file(
-            rx.upload_files(upload_id="upload_file")
-        ),  # type:ignore
+            rx.upload_files(upload_id="upload_file")  # type:ignore
+        ),
         bg=rx.color("slate", 12),
         class_name="fixed right-10 bottom-10 rounded-full !p-2  !border-0",
     )
