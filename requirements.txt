@@ -112,6 +112,8 @@ pygments==2.18.0
     # via
     #   readme-renderer
     #   rich
+pypdf==5.1.0
+    # via easy-office (pyproject.toml)
 pyproject-hooks==1.2.0
     # via build
 python-dateutil==2.9.0.post0
