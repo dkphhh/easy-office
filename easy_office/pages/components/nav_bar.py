@@ -8,8 +8,16 @@ def dark_mode_toggle() -> rx.Component:
         rx.button(
             rx.cond(
                 color_mode == "light",
-                rx.icon("sun", size=25, color=rx.color("slate", 12)),
-                rx.icon("moon", size=25, color=rx.color("slate", 12)),
+                rx.icon(
+                    "sun",
+                    size=25,
+                    color=rx.color("slate", 12),
+                ),
+                rx.icon(
+                    "moon",
+                    size=25,
+                    color=rx.color("slate", 12),
+                ),
             ),
             on_click=toggle_color_mode,
             padding=0,
@@ -56,17 +64,25 @@ def render_nav_item(item: NavItem) -> rx.Component:
 def nav_bar() -> rx.Component:
     return rx.el.nav(
         rx.flex(
-            rx.box(
+            rx.flex(
                 rx.heading(
-                    rx.link("EasyOffice", href="/", color=rx.color("slate", 2)),
+                    rx.link(
+                        "EasyOffice",
+                        href="/",
+                        color=rx.color("slate", 2),
+                    ),
                     as_="h1",
                     size="6",
                 ),
                 bg=rx.color("slate", 12),
+                justify="center",
+                align="center",
                 class_name="rounded-full py-1 px-4 w-40",
             ),
             rx.hstack(
-                rx.foreach(NavBarState.items, render_nav_item),
+                rx.foreach(
+                    NavBarState.items, render_nav_item
+                ),
                 spacing="5",
                 align="center",
                 justify="center",
