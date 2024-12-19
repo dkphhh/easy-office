@@ -1,5 +1,5 @@
 import os
-from typing import Callable
+from typing import Any, Callable
 
 import reflex as rx
 
@@ -26,7 +26,7 @@ class PassState(rx.State):
 
     @rx.event
     def check_input(
-        self, value: dict[str, str]
+        self, value: dict[str, Any]
     ) -> None | rx.Component:
         """用于验证用户输入的值是否等于环境变量里的 PASSWORD
 
