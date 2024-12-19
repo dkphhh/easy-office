@@ -24,6 +24,7 @@ class PassState(rx.State):
 
         return False
 
+    @rx.event
     def check_input(
         self, value: dict[str, str]
     ) -> None | rx.Component:

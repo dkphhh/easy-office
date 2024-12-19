@@ -1,18 +1,18 @@
 import asyncio
 import os
 from datetime import datetime, timedelta
-from io import BytesIO
 from typing import AsyncGenerator
 
 import reflex as rx
-from pypdf import PdfReader, PdfWriter
 from reflex_ag_grid import ag_grid
 
-from ..utils.request_api import (
-    create_new_record,
+from ..utils.file_process import (
     generate_filename,
-    recognize_filetype,
-    request_baidu_ocr,
+    save_file_list,
+)
+from ..utils.request_api import (
+    Request_Baidu_OCR,
+    create_new_record,
 )
 
 BACK_END = os.getenv("BACK_END")
@@ -54,54 +54,11 @@ class UploadState(rx.State):
             )
 
         try:
-            tasks = []
-            for file in files:
-                filetype, _ = recognize_filetype(file)
-                match filetype:
-                    case "img":
-                        tasks.append(
-                            request_baidu_ocr(
-                                file=file,
-                                mode="bank_slip",
-                            )
-                        )
-
-                    case "pdf":
-                        reader = PdfReader(
-                            file.file
-                        )  # 执行本句后，文件指针在文件末尾
-
-                        if len(reader.pages) == 1:
-                            file.file.seek(0)  # 重置指针
-                            tasks.append(
-                                request_baidu_ocr(
-                                    file=file,
-                                    mode="bank_slip",
-                                )
-                            )
-
-                        else:
-                            for page in reader.pages:
-                                writer = PdfWriter()
-                                writer.add_page(page=page)
-                                bytes_stream = BytesIO()
-                                writer.write(
-                                    bytes_stream
-                                )  # 执行本句后，文件指针在 BytesIO 末尾
-                                bytes_stream.seek(
-                                    0
-                                )  # 重置指针
-                                split_pdf = rx.UploadFile(
-                                    file=bytes_stream,
-                                    filename=f"{file.filename}-{generate_filename(file_extension=".pdf")}",
-                                )
-
-                                tasks.append(
-                                    request_baidu_ocr(
-                                        file=split_pdf,
-                                        mode="bank_slip",
-                                    )
-                                )
+            files_list = await save_file_list(files)
+            tasks = [
+                Request_Baidu_OCR(file=file).bank_slip()
+                for file in files_list
+            ]
 
             resp_list = await asyncio.gather(*tasks)
 
@@ -131,9 +88,7 @@ class UploadState(rx.State):
         yield
 
         file = files[0]
-        _, file_extension = recognize_filetype(
-            file
-        )  # 检查文件类型 和 文件扩展名
+        file_extension = "." + file.filename.split(".")[-1]  # type:ignore
         new_filename = generate_filename(
             file_extension, length=6
         )  # 用时间和随机字符串给文件重新命名
