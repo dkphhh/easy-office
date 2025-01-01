@@ -228,7 +228,7 @@ requires-dist = [
     { name = "pypdf", specifier = ">=5.1.0" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "reflex", specifier = "==0.6.7" },
-    { name = "reflex-ag-grid", specifier = ">=0.0.8" },
+    { name = "reflex-ag-grid", specifier = ">=0.0.10" },
 ]
 
 [[package]]
@@ -871,14 +871,14 @@ wheels = [
 
 [[package]]
 name = "reflex-ag-grid"
-version = "0.0.8"
+version = "0.0.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "reflex" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/09/e8/c602cbf39376ef47ef55a8be8dffa0bb7daa81f4cefac6da4143852bc34a/reflex_ag_grid-0.0.8.tar.gz", hash = "sha256:0f9c06b70cf91e789fa6ed74510d8fd0489cc0c9ee9513d2fc04b484a044b36a", size = 11977 }
+sdist = { url = "https://files.pythonhosted.org/packages/80/a0/9be21f89afdb9bf382d327b542117b3867e3a1eaa5fa11c672d430803129/reflex_ag_grid-0.0.10.tar.gz", hash = "sha256:d1aef1005ae9b13ba265df1fe2aaee7a871b9f1310c599fe77cc216336620965", size = 13972 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bc/ae/375dde53032d6411f0452179472f7c25204cc7aaa04de6a9242f0917be65/reflex_ag_grid-0.0.8-py3-none-any.whl", hash = "sha256:411ec0c2d292a277e35678bf788dac427b02d12e4e89bcad94ff3af61b9d5b13", size = 12308 },
+    { url = "https://files.pythonhosted.org/packages/e3/56/1ed7582723d2a60d696079d3a48eabae1109dc04b8a87359da0c36d3e311/reflex_ag_grid-0.0.10-py3-none-any.whl", hash = "sha256:1e6cc92aaa7f314f56669eb5caf9cc44d862dd0237d0be15aad1c6f267247a73", size = 14275 },
 ]
 
 [[package]]

@@ -307,40 +307,40 @@ class Request_Baidu_OCR:
             ]
 
             result = {
-                "file_name": self.file.name,  # 文件名
-                "amount_in_figuers": words_result[
-                    "AmountInFiguers"
-                ],  # 价税合计(小写)
-                "amount_in_words": words_result[
-                    "AmountInWords"
-                ],  # 价税合计(小写)
+                # "file_name": self.file.name,  # 文件名 -
                 "invoice_date": words_result[
                     "InvoiceDate"
-                ],  # 开票日期
+                ],  # 开票日期 -
                 "invoice_num": words_result[
                     "InvoiceNum"
-                ],  # 发票号码
+                ],  # 发票号码 -
                 "invoice_type": words_result[
                     "InvoiceType"
-                ],  # 发票种类
+                ],  # 发票种类 -
                 "purchaser_name": words_result[
                     "PurchaserName"
-                ],  # 购买方姓名
+                ],  # 购买方姓名 -
                 "purchaser_register_num": words_result[
                     "PurchaserRegisterNum"
-                ],  # 购买方税号
+                ],  # 购买方税号 -
                 "seller_name": words_result[
                     "SellerName"
-                ],  # 销售方姓名
+                ],  # 销售方姓名 -
                 "seller_register_num": words_result[
                     "SellerRegisterNum"
-                ],  # 销售方纳税人识别号
-                "total_amount": words_result[
-                    "TotalAmount"
-                ],  # 合计金额
-                "total_tax": words_result[
-                    "TotalTax"
-                ],  # 合计税额
+                ],  # 销售方纳税人识别号 -
+                # "total_amount": words_result[
+                #     "TotalAmount"
+                # ],  # 合计金额
+                # "total_tax": words_result[
+                #     "TotalTax"
+                # ],  # 合计税额
+                "amount_in_figures": words_result[
+                    "AmountInFiguers"
+                ],  # 价税合计(小写)
+                # "amount_in_words": words_result[
+                #     "AmountInWords"
+                # ],  # 价税合计(大写)
             }
 
             return result
@@ -387,9 +387,6 @@ async def create_new_record(record: dict):
                 "付款方": record.get("payer", ""),
                 "收款方": record.get("receiver", ""),
                 "回单链接": record.get("bank_slip_url", ""),
-                "发票链接": record.get(
-                    "tax_invoice_url", ""
-                ),
             },
         }
 

@@ -38,6 +38,8 @@ class NavItem(rx.Base):
 class NavBarState(rx.State):
     items: list[NavItem] = [
         NavItem(name="快捷记账", path="/"),
+        NavItem(name="文件上传", path="/upload-files"),
+        NavItem(name="发票识别", path="/invoice-ocr"),
         NavItem(
             name="账目一览",
             path="https://yuanwang.feishu.cn/base/MFoQbIqCNaujgzsn7vOcTfpBnjb?table=tblrtFGd80L0Z0Hk&view=vewfVnLasa",
@@ -46,7 +48,7 @@ class NavBarState(rx.State):
 
 
 def render_nav_item(item: NavItem) -> rx.Component:
-    return rx.heading(
+    return rx.el.h2(
         rx.link(
             item.name,
             href=item.path,
@@ -56,44 +58,34 @@ def render_nav_item(item: NavItem) -> rx.Component:
                 rx.color("slate", 10),
             ),
         ),
-        as_="h2",
-        size="6",
+        class_name="font-bold text-xl",
     )
 
 
 def nav_bar() -> rx.Component:
     return rx.el.nav(
-        rx.flex(
-            rx.flex(
-                rx.heading(
+        rx.el.div(
+            rx.el.div(
+                rx.el.h1(
                     rx.link(
                         "EasyOffice",
                         href="/",
                         color=rx.color("slate", 2),
                     ),
-                    as_="h1",
-                    size="6",
+                    class_name="text-2xl font-bold",
                 ),
                 bg=rx.color("slate", 12),
-                justify="center",
-                align="center",
-                class_name="rounded-full py-1 px-4 w-40",
+                class_name="flex rounded-full py-1 px-4 w-40 justify-center items-center",
             ),
-            rx.hstack(
+            rx.el.div(
                 rx.foreach(
                     NavBarState.items, render_nav_item
                 ),
-                spacing="5",
-                align="center",
-                justify="center",
+                class_name="flex flex-row justify-center items-center space-x-5",
             ),
             dark_mode_toggle(),
-            direction="row",
-            justify="between",
-            align="center",
-            width="80%",
-            height="48px",
+            class_name="flex flex-row justify-between items-center w-4/5 h-12",
         ),
         bg=rx.color("slate", 2),
-        class_name="flex flex-row justify-center items-center w-8/12 h-16 m-2 rounded-full",
+        class_name="flex flex-row justify-center items-center w-10/12 h-16 m-2 rounded-full",
     )

@@ -1,0 +1,68 @@
+Date : 2025-01-01 18:27:53
+Directory : /Users/dkphhh/dev/easy-office
+Total : 29 files,  3721 codes, 213 comments, 549 blanks, all 4483 lines
+
+Languages
++------------------+------------+------------+------------+------------+------------+
+| language         | files      | code       | comment    | blank      | total      |
++------------------+------------+------------+------------+------------+------------+
+| Python           |         21 |      2,407 |         67 |        448 |      2,922 |
+| toml             |          1 |      1,169 |          0 |         90 |      1,259 |
+| pip requirements |          1 |         78 |        146 |          1 |        225 |
+| XML              |          5 |         43 |          0 |          0 |         43 |
+| Markdown         |          1 |         24 |          0 |         10 |         34 |
++------------------+------------+------------+------------+------------+------------+
+
+Directories
++------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                         | files      | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                            |         29 |      3,721 |        213 |        549 |      4,483 |
+| . (Files)                                                                    |          4 |      1,286 |        146 |        107 |      1,539 |
+| .idea                                                                        |          5 |         43 |          0 |          0 |         43 |
+| .idea (Files)                                                                |          4 |         37 |          0 |          0 |         37 |
+| .idea/inspectionProfiles                                                     |          1 |          6 |          0 |          0 |          6 |
+| easy_office                                                                  |         20 |      2,392 |         67 |        442 |      2,901 |
+| easy_office (Files)                                                          |          2 |         20 |          0 |          8 |         28 |
+| easy_office/archive                                                          |          3 |        849 |         21 |        112 |        982 |
+| easy_office/pages                                                            |          8 |        778 |          6 |        126 |        910 |
+| easy_office/pages (Files)                                                    |          4 |        555 |          5 |         97 |        657 |
+| easy_office/pages/components                                                 |          4 |        223 |          1 |         29 |        253 |
+| easy_office/utils                                                            |          7 |        745 |         40 |        196 |        981 |
++------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| filename                                                                     | language         | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| /Users/dkphhh/dev/easy-office/.idea/easy-office.iml                          | XML              |         14 |          0 |          0 |         14 |
+| /Users/dkphhh/dev/easy-office/.idea/inspectionProfiles/profiles_settings.xml | XML              |          6 |          0 |          0 |          6 |
+| /Users/dkphhh/dev/easy-office/.idea/misc.xml                                 | XML              |          9 |          0 |          0 |          9 |
+| /Users/dkphhh/dev/easy-office/.idea/modules.xml                              | XML              |          8 |          0 |          0 |          8 |
+| /Users/dkphhh/dev/easy-office/.idea/vcs.xml                                  | XML              |          6 |          0 |          0 |          6 |
+| /Users/dkphhh/dev/easy-office/README.md                                      | Markdown         |         24 |          0 |         10 |         34 |
+| /Users/dkphhh/dev/easy-office/easy_office/__init__.py                        | Python           |          1 |          0 |          1 |          2 |
+| /Users/dkphhh/dev/easy-office/easy_office/archive/display.py                 | Python           |        150 |          4 |         38 |        192 |
+| /Users/dkphhh/dev/easy-office/easy_office/archive/models.py                  | Python           |         64 |          0 |         17 |         81 |
+| /Users/dkphhh/dev/easy-office/easy_office/archive/recognize.py               | Python           |        635 |         17 |         57 |        709 |
+| /Users/dkphhh/dev/easy-office/easy_office/easy_office.py                     | Python           |         19 |          0 |          7 |         26 |
+| /Users/dkphhh/dev/easy-office/easy_office/pages/__init__.py                  | Python           |          0 |          0 |          1 |          1 |
+| /Users/dkphhh/dev/easy-office/easy_office/pages/bank_slip.py                 | Python           |        245 |          2 |         39 |        286 |
+| /Users/dkphhh/dev/easy-office/easy_office/pages/components/check_password.py | Python           |         84 |          0 |         14 |         98 |
+| /Users/dkphhh/dev/easy-office/easy_office/pages/components/nav_bar.py        | Python           |         80 |          0 |         11 |         91 |
+| /Users/dkphhh/dev/easy-office/easy_office/pages/components/template.py       | Python           |         11 |          0 |          1 |         12 |
+| /Users/dkphhh/dev/easy-office/easy_office/pages/components/upload_zone.py    | Python           |         48 |          1 |          3 |         52 |
+| /Users/dkphhh/dev/easy-office/easy_office/pages/upload_files.py              | Python           |        112 |          3 |         27 |        142 |
+| /Users/dkphhh/dev/easy-office/easy_office/pages/vat_invoice.py               | Python           |        198 |          0 |         30 |        228 |
+| /Users/dkphhh/dev/easy-office/easy_office/utils/__init__.py                  | Python           |          1 |          0 |          1 |          2 |
+| /Users/dkphhh/dev/easy-office/easy_office/utils/bank_slip.py                 | Python           |        171 |         13 |         36 |        220 |
+| /Users/dkphhh/dev/easy-office/easy_office/utils/file_process.py              | Python           |         79 |          3 |         24 |        106 |
+| /Users/dkphhh/dev/easy-office/easy_office/utils/invoice.py                   | Python           |         51 |          0 |          8 |         59 |
+| /Users/dkphhh/dev/easy-office/easy_office/utils/log.py                       | Python           |         14 |          0 |          4 |         18 |
+| /Users/dkphhh/dev/easy-office/easy_office/utils/request_api.py               | Python           |        325 |         19 |         91 |        435 |
+| /Users/dkphhh/dev/easy-office/easy_office/utils/test.py                      | Python           |        104 |          5 |         32 |        141 |
+| /Users/dkphhh/dev/easy-office/requirements.txt                               | pip requirements |         78 |        146 |          1 |        225 |
+| /Users/dkphhh/dev/easy-office/rxconfig.py                                    | Python           |         15 |          0 |          6 |         21 |
+| /Users/dkphhh/dev/easy-office/uv.lock                                        | toml             |      1,169 |          0 |         90 |      1,259 |
+| Total                                                                        |                  |      3,721 |        213 |        549 |      4,483 |
++------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+

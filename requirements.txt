@@ -143,7 +143,7 @@ reflex==0.6.7
     #   easy-office (pyproject.toml)
     #   reflex-ag-grid
     #   reflex-chakra
-reflex-ag-grid==0.0.8
+reflex-ag-grid==0.0.10
     # via easy-office (pyproject.toml)
 reflex-chakra==0.6.1
     # via reflex

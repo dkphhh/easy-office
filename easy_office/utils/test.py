@@ -105,8 +105,7 @@ async def request_invoice_api(path: Path):
 
 
 if __name__ == "__main__":
-    
-    path = "/Users/dkphhh/Downloads/邓鲲鹏报销"
+    path = "/Users/dkphhh/Downloads/7-归档/愿望实现+共识壹号 12月报销/共识壹号12月发票/邓鲲鹏报销"
 
     async def main(path: str):
         pdf_dir = Path(path)
@@ -119,7 +118,7 @@ if __name__ == "__main__":
         data = await asyncio.gather(*tasks)
 
         with open(
-            file=pdf_dir / "output.csv",
+            file=pdf_dir / "测试",
             mode="w",
             newline="",
             encoding="utf-8",
