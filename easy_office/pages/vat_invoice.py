@@ -3,6 +3,7 @@ import csv
 from io import StringIO
 from pathlib import Path
 
+import httpx
 import reflex as rx
 from reflex_ag_grid import ag_grid
 
@@ -56,17 +57,14 @@ class VatInvoiceState(rx.State):
 
         try:
             files_list = await save_file_list(files)
-            
-            
+
             tasks = [
                 Request_Baidu_OCR(file=file).vat_invoice()
                 for file in files_list
             ]
 
-          
-
             resp_list = await asyncio.gather(*tasks)
-            
+
             # 生成原始的文件名
             file_name_list = [
                 file.filename for file in files
@@ -87,6 +85,9 @@ class VatInvoiceState(rx.State):
             # 识别完成后，删除所有上传的文件
             # map 返回的是一个生成器，不会立即执行删除，所以需要 list()
             list(map(Path.unlink, files_list))
+
+        except httpx.ConnectError as e:
+            yield rx.toast.error(f"{e}", close_button=True)
 
         except Exception as e:
             yield rx.toast.error(f"{e}", close_button=True)

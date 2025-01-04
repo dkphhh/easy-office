@@ -1,0 +1,11 @@
+"filename", "language", "Python", "comment", "blank", "total"
+"/Users/dkphhh/dev/easy-office/easy_office/archive/display.py", "Python", -150, -4, -38, -192
+"/Users/dkphhh/dev/easy-office/easy_office/archive/models.py", "Python", -64, 0, -17, -81
+"/Users/dkphhh/dev/easy-office/easy_office/archive/recognize.py", "Python", -635, -17, -57, -709
+"/Users/dkphhh/dev/easy-office/easy_office/pages/bank_slip.py", "Python", -9, 0, 0, -9
+"/Users/dkphhh/dev/easy-office/easy_office/pages/components/nav_bar.py", "Python", 1, 0, 0, 1
+"/Users/dkphhh/dev/easy-office/easy_office/pages/vat_invoice.py", "Python", 14, 4, 8, 26
+"/Users/dkphhh/dev/easy-office/easy_office/utils/bank_slip.py", "Python", -171, -13, -36, -220
+"/Users/dkphhh/dev/easy-office/easy_office/utils/invoice.py", "Python", -51, 0, -8, -59
+"/Users/dkphhh/dev/easy-office/easy_office/utils/request_api.py", "Python", -4, 1, 0, -3
+"Total", "-", -1069, -29, -148, -1246

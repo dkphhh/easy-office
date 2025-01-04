@@ -23,7 +23,7 @@ def upload_zone(
                     size="1",
                 ),
                 rx.text(
-                    "最多同时上传5个文件，单文件最大5mb",
+                    "不建议单次上传太多文件，单文件最大5mb",
                     size="1",
                 ),
                 spacing="1",
