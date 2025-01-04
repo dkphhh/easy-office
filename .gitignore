@@ -8,6 +8,8 @@
 .venv/
 .vscode
 .web
+.VSCodeCounter
+.idea
 Dockerfile.production
 __pycache__/
 alembic
