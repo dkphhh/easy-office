@@ -63,8 +63,7 @@ class UploadFileState(rx.State):
             self.up_loading = False
 
     @rx.event
-    def copy_file_url(self, file_url: str):
-        yield rx.set_clipboard(content=file_url)
+    def toast_copy_file_url(self, file_url: str):
         yield rx.toast.success(
             message=f"成功复制链接：{file_url}",
             close_button=True,
@@ -105,9 +104,12 @@ def render_file_data(
         rx.table.cell(  # Action，点击按钮将链接复制到剪贴板
             rx.button(
                 "复制链接",
-                on_click=UploadFileState.copy_file_url(
-                    file_url
-                ),
+                on_click=[
+                    rx.set_clipboard(content=file_url),
+                    UploadFileState.toast_copy_file_url(
+                        file_url
+                    ),
+                ],
                 color=rx.color("slate", 2),
                 bg=rx.color("slate", 12),
             )
